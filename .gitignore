@@ -9,3 +9,4 @@ __pycache__/
 *.pyc
 PicApp.zip
 dev/object_info.json
+PicApp/server_from_claude.log
