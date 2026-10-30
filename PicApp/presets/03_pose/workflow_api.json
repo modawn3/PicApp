@@ -1,0 +1,508 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "dreamshaper_8.safetensors"
+  },
+  "_meta": {
+   "title": "CheckpointLoaderSimple"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "a young steampunk inventor girl with brass goggles and a mechanical arm, full body, simple background, white background, flat illustration, anime style, clean lineart, flat colors, vibrant colors, cel shading, game character art, highly detailed",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 프롬프트 (그릴 것)"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정 프롬프트 (피할 것)"
+  }
+ },
+ "5": {
+  "class_type": "EmptyLatentImage",
+  "inputs": {
+   "width": 512,
+   "height": 768,
+   "batch_size": 1
+  },
+  "_meta": {
+   "title": "EmptyLatentImage"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "53",
+    0
+   ],
+   "seed": 0,
+   "steps": 25,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "positive": [
+    "17",
+    0
+   ],
+   "negative": [
+    "17",
+    1
+   ],
+   "latent_image": [
+    "5",
+    0
+   ],
+   "denoise": 1
+  },
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "7": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "samples": [
+    "21",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  },
+  "_meta": {
+   "title": "VAE Decode (타일, 메모리 절약)"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "26",
+    0
+   ],
+   "filename_prefix": "03_pose_512"
+  },
+  "_meta": {
+   "title": "저장: 원본 512"
+  }
+ },
+ "9": {
+  "class_type": "ImageScale",
+  "inputs": {
+   "image": [
+    "11",
+    0
+   ],
+   "upscale_method": "area",
+   "width": 256,
+   "height": 384,
+   "crop": "disabled"
+  },
+  "_meta": {
+   "title": "게임 에셋 크기로 축소 (256x384)"
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "9",
+    0
+   ],
+   "filename_prefix": "03_pose_256_transparent"
+  },
+  "_meta": {
+   "title": "저장: 투명 에셋 256"
+  }
+ },
+ "11": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "26",
+    0
+   ],
+   "torchscript_jit": "default"
+  },
+  "_meta": {
+   "title": "배경 제거 (투명)"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "03_pose_512_transparent"
+  },
+  "_meta": {
+   "title": "저장: 투명 512"
+  }
+ },
+ "13": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "pose_reference.png"
+  },
+  "_meta": {
+   "title": "포즈 참고 그림 (사진·그림 아무거나)"
+  }
+ },
+ "14": {
+  "class_type": "DWPreprocessor",
+  "inputs": {
+   "image": [
+    "13",
+    0
+   ],
+   "detect_hand": "enable",
+   "detect_body": "enable",
+   "detect_face": "enable",
+   "resolution": 512,
+   "bbox_detector": "yolox_l.onnx",
+   "pose_estimator": "dw-ll_ucoco_384_bs5.torchscript.pt",
+   "scale_stick_for_xinsr_cn": "disable"
+  },
+  "_meta": {
+   "title": "포즈 뼈대 뽑기 (DWPose)"
+  }
+ },
+ "15": {
+  "class_type": "PreviewImage",
+  "inputs": {
+   "images": [
+    "14",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "뼈대 확인"
+  }
+ },
+ "16": {
+  "class_type": "ControlNetLoader",
+  "inputs": {
+   "control_net_name": "control_v11p_sd15_openpose_fp16.safetensors"
+  },
+  "_meta": {
+   "title": "ControlNetLoader"
+  }
+ },
+ "17": {
+  "class_type": "ControlNetApplyAdvanced",
+  "inputs": {
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "control_net": [
+    "16",
+    0
+   ],
+   "image": [
+    "14",
+    0
+   ],
+   "strength": 1.0,
+   "start_percent": 0.0,
+   "end_percent": 0.8
+  },
+  "_meta": {
+   "title": "포즈 적용 (strength 1.0, end 0.8)"
+  }
+ },
+ "20": {
+  "class_type": "LatentUpscaleBy",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "upscale_method": "nearest-exact",
+   "scale_by": 1.5
+  },
+  "_meta": {
+   "title": "2단계: 1.5배 키우기"
+  }
+ },
+ "21": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "53",
+    0
+   ],
+   "positive": [
+    "17",
+    0
+   ],
+   "negative": [
+    "17",
+    1
+   ],
+   "latent_image": [
+    "20",
+    0
+   ],
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.45
+  },
+  "_meta": {
+   "title": "2단계: 세부 다시 그리기 (denoise 0.45)"
+  }
+ },
+ "22": {
+  "class_type": "UltralyticsDetectorProvider",
+  "inputs": {
+   "model_name": "bbox/face_yolov8m.pt"
+  },
+  "_meta": {
+   "title": "얼굴 찾기"
+  }
+ },
+ "23": {
+  "class_type": "FaceDetailer",
+  "_meta": {
+   "title": "얼굴 자동 다듬기"
+  },
+  "inputs": {
+   "image": [
+    "7",
+    0
+   ],
+   "model": [
+    "53",
+    0
+   ],
+   "clip": [
+    "2",
+    1
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "bbox_detector": [
+    "22",
+    0
+   ],
+   "guide_size": 512,
+   "guide_size_for": true,
+   "max_size": 768,
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.4,
+   "feather": 5,
+   "noise_mask": true,
+   "force_inpaint": true,
+   "bbox_threshold": 0.5,
+   "bbox_dilation": 10,
+   "bbox_crop_factor": 3.0,
+   "sam_detection_hint": "center-1",
+   "sam_dilation": 0,
+   "sam_threshold": 0.93,
+   "sam_bbox_expansion": 0,
+   "sam_mask_hint_threshold": 0.7,
+   "sam_mask_hint_use_negative": "False",
+   "drop_size": 10,
+   "wildcard": "",
+   "cycle": 1,
+   "inpaint_model": false,
+   "noise_mask_feather": 20,
+   "tiled_encode": false,
+   "tiled_decode": false
+  }
+ },
+ "24": {
+  "class_type": "UltralyticsDetectorProvider",
+  "inputs": {
+   "model_name": "bbox/hand_yolov8s.pt"
+  },
+  "_meta": {
+   "title": "손 찾기"
+  }
+ },
+ "25": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "detailed hands, five fingers",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "손 다듬기 프롬프트"
+  }
+ },
+ "26": {
+  "class_type": "FaceDetailer",
+  "_meta": {
+   "title": "손 자동 다듬기"
+  },
+  "inputs": {
+   "image": [
+    "23",
+    0
+   ],
+   "model": [
+    "53",
+    0
+   ],
+   "clip": [
+    "2",
+    1
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "positive": [
+    "25",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "bbox_detector": [
+    "24",
+    0
+   ],
+   "guide_size": 512,
+   "guide_size_for": true,
+   "max_size": 768,
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.45,
+   "feather": 5,
+   "noise_mask": true,
+   "force_inpaint": true,
+   "bbox_threshold": 0.5,
+   "bbox_dilation": 10,
+   "bbox_crop_factor": 2.0,
+   "sam_detection_hint": "center-1",
+   "sam_dilation": 0,
+   "sam_threshold": 0.93,
+   "sam_bbox_expansion": 0,
+   "sam_mask_hint_threshold": 0.7,
+   "sam_mask_hint_use_negative": "False",
+   "drop_size": 10,
+   "wildcard": "",
+   "cycle": 1,
+   "inpaint_model": false,
+   "noise_mask_feather": 20,
+   "tiled_encode": false,
+   "tiled_decode": false
+  }
+ },
+ "52": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "character_reference.png"
+  },
+  "_meta": {
+   "title": "캐릭터 참고 그림"
+  }
+ },
+ "51": {
+  "class_type": "PrepImageForClipVision",
+  "inputs": {
+   "image": [
+    "52",
+    0
+   ],
+   "interpolation": "LANCZOS",
+   "crop_position": "pad",
+   "sharpening": 0.0
+  },
+  "_meta": {
+   "title": "정사각으로 (자르지 않고 여백)"
+  }
+ },
+ "50": {
+  "class_type": "IPAdapterUnifiedLoader",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "preset": "PLUS (high strength)"
+  },
+  "_meta": {
+   "title": "IP-Adapter PLUS 불러오기"
+  }
+ },
+ "53": {
+  "class_type": "IPAdapterAdvanced",
+  "inputs": {
+   "model": [
+    "50",
+    0
+   ],
+   "ipadapter": [
+    "50",
+    1
+   ],
+   "image": [
+    "51",
+    0
+   ],
+   "weight": 0.7,
+   "weight_type": "linear",
+   "combine_embeds": "concat",
+   "start_at": 0.0,
+   "end_at": 1.0,
+   "embeds_scaling": "V only"
+  },
+  "_meta": {
+   "title": "캐릭터 닮게"
+  }
+ }
+}

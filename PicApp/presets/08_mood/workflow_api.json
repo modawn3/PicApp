@@ -1,0 +1,245 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "dreamshaper_8.safetensors"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 (설명 + 분위기 + 그림체)"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정"
+  }
+ },
+ "13": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "mood_source.png"
+  },
+  "_meta": {
+   "title": "바꿀 그림"
+  }
+ },
+ "30": {
+  "class_type": "ImageScaleToTotalPixels",
+  "inputs": {
+   "image": [
+    "13",
+    0
+   ],
+   "upscale_method": "lanczos",
+   "megapixels": 0.3,
+   "resolution_steps": 8
+  },
+  "_meta": {
+   "title": "SD 1.5 크기로 맞추기 (약 0.3MP)"
+  }
+ },
+ "31": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "30",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ]
+  }
+ },
+ "32": {
+  "class_type": "LineArtPreprocessor",
+  "inputs": {
+   "image": [
+    "30",
+    0
+   ],
+   "coarse": "disable",
+   "resolution": 512
+  },
+  "_meta": {
+   "title": "선 뽑기"
+  }
+ },
+ "15": {
+  "class_type": "PreviewImage",
+  "inputs": {
+   "images": [
+    "32",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "선 확인"
+  }
+ },
+ "33": {
+  "class_type": "ControlNetLoader",
+  "inputs": {
+   "control_net_name": "control_v11p_sd15_lineart_fp16.safetensors"
+  }
+ },
+ "34": {
+  "class_type": "ControlNetApplyAdvanced",
+  "inputs": {
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "control_net": [
+    "33",
+    0
+   ],
+   "image": [
+    "32",
+    0
+   ],
+   "strength": 0.8,
+   "start_percent": 0.0,
+   "end_percent": 0.9
+  },
+  "_meta": {
+   "title": "모양 지키기"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "34",
+    0
+   ],
+   "negative": [
+    "34",
+    1
+   ],
+   "latent_image": [
+    "31",
+    0
+   ],
+   "seed": 0,
+   "steps": 30,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.55
+  },
+  "_meta": {
+   "title": "다시 그리기"
+  }
+ },
+ "20": {
+  "class_type": "LatentUpscaleBy",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "upscale_method": "nearest-exact",
+   "scale_by": 1.5
+  }
+ },
+ "21": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "34",
+    0
+   ],
+   "negative": [
+    "34",
+    1
+   ],
+   "latent_image": [
+    "20",
+    0
+   ],
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.45
+  }
+ },
+ "7": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "samples": [
+    "21",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "7",
+    0
+   ],
+   "filename_prefix": "08_mood"
+  }
+ },
+ "11": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "7",
+    0
+   ],
+   "torchscript_jit": "default"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "08_mood_transparent"
+  }
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "13": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "pixel_source.png"
+  },
+  "_meta": {
+   "title": "도트로 만들 그림"
+  }
+ },
+ "40": {
+  "class_type": "JoinImageWithAlpha",
+  "inputs": {
+   "image": [
+    "13",
+    0
+   ],
+   "alpha": [
+    "13",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "투명 그대로"
+  }
+ },
+ "11": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "13",
+    0
+   ],
+   "torchscript_jit": "default"
+  },
+  "_meta": {
+   "title": "배경 제거"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "09_pixel_source"
+  }
+ }
+}

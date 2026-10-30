@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>그림 도구</title>
+<link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+<header>
+  <h1>그림 도구</h1>
+  <span id="comfy-status" class="pill">ComfyUI 확인 중…</span>
+  <button id="open-folder" class="btn small" type="button">결과 폴더 열기</button>
+  <button id="update-btn" class="btn small" type="button" hidden>업데이트 확인</button>
+</header>
+<div class="layout">
+  <nav id="tabs"></nav>
+  <main>
+    <section id="form-area"></section>
+    <section id="result-area">
+      <div id="run-status" class="muted">아직 만든 그림이 없어요.</div>
+      <div id="results"></div>
+    </section>
+  </main>
+</div>
+<div id="viewer" hidden><img alt=""><button class="close">닫기</button></div>
+<script src="/web/app.js"></script>
+</body>
+</html>

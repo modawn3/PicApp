@@ -1,0 +1,161 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "DreamShaperXL_Turbo_v2_1.safetensors"
+  },
+  "_meta": {
+   "title": "SDXL 모델"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 (설명 + 그림체)"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정"
+  }
+ },
+ "13": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "sdxl_source.png"
+  },
+  "_meta": {
+   "title": "다듬을 그림"
+  }
+ },
+ "30": {
+  "class_type": "ImageScaleToTotalPixels",
+  "inputs": {
+   "image": [
+    "13",
+    0
+   ],
+   "upscale_method": "lanczos",
+   "megapixels": 1.0,
+   "resolution_steps": 8
+  },
+  "_meta": {
+   "title": "SDXL 크기로 키우기 (약 1MP)"
+  }
+ },
+ "31": {
+  "class_type": "VAEEncodeTiled",
+  "inputs": {
+   "pixels": [
+    "30",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  },
+  "_meta": {
+   "title": "VAE Encode (타일, 메모리 절약)"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "31",
+    0
+   ],
+   "seed": 0,
+   "steps": 8,
+   "cfg": 2.0,
+   "sampler_name": "dpmpp_sde",
+   "scheduler": "karras",
+   "denoise": 0.35
+  },
+  "_meta": {
+   "title": "SDXL 로 다시 다듬기"
+  }
+ },
+ "7": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  },
+  "_meta": {
+   "title": "VAE Decode (타일, 메모리 절약)"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "7",
+    0
+   ],
+   "filename_prefix": "11_sdxl"
+  }
+ },
+ "11": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "7",
+    0
+   ],
+   "torchscript_jit": "default"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "11_sdxl_transparent"
+  }
+ }
+}

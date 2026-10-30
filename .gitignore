@@ -1,0 +1,11 @@
+# 사용자 PC 마다 다른 것 (업데이트가 건드리지 않음)
+PicApp/settings.json
+PicApp/results/
+PicApp/models/
+PicApp/poses/
+PicApp/backup/
+PicApp/.update_state.json
+__pycache__/
+*.pyc
+PicApp.zip
+dev/object_info.json

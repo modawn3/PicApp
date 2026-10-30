@@ -1,0 +1,369 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "dreamshaper_8.safetensors"
+  },
+  "_meta": {
+   "title": "CheckpointLoaderSimple"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "a young steampunk inventor girl with brass goggles and a mechanical arm, full body, standing, simple background, white background, flat illustration, anime style, clean lineart, flat colors, vibrant colors, cel shading, game character art, highly detailed",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 프롬프트 (그릴 것)"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정 프롬프트 (피할 것)"
+  }
+ },
+ "5": {
+  "class_type": "EmptyLatentImage",
+  "inputs": {
+   "width": 512,
+   "height": 512,
+   "batch_size": 1
+  },
+  "_meta": {
+   "title": "EmptyLatentImage"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "seed": 0,
+   "steps": 25,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "5",
+    0
+   ],
+   "denoise": 1
+  },
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "7": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "samples": [
+    "21",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  },
+  "_meta": {
+   "title": "VAE Decode (타일, 메모리 절약)"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "26",
+    0
+   ],
+   "filename_prefix": "01_char_512"
+  },
+  "_meta": {
+   "title": "저장: 원본 512"
+  }
+ },
+ "9": {
+  "class_type": "ImageScale",
+  "inputs": {
+   "image": [
+    "11",
+    0
+   ],
+   "upscale_method": "area",
+   "width": 256,
+   "height": 256,
+   "crop": "disabled"
+  },
+  "_meta": {
+   "title": "게임 에셋 크기로 축소 (256)"
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "9",
+    0
+   ],
+   "filename_prefix": "01_char_256_transparent"
+  },
+  "_meta": {
+   "title": "저장: 투명 에셋 256"
+  }
+ },
+ "11": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "26",
+    0
+   ],
+   "torchscript_jit": "default"
+  },
+  "_meta": {
+   "title": "배경 제거 (투명)"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "01_char_512_transparent"
+  },
+  "_meta": {
+   "title": "저장: 투명 512"
+  }
+ },
+ "20": {
+  "class_type": "LatentUpscaleBy",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "upscale_method": "nearest-exact",
+   "scale_by": 1.5
+  },
+  "_meta": {
+   "title": "2단계: 1.5배 키우기"
+  }
+ },
+ "21": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "20",
+    0
+   ],
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.45
+  },
+  "_meta": {
+   "title": "2단계: 세부 다시 그리기 (denoise 0.45)"
+  }
+ },
+ "22": {
+  "class_type": "UltralyticsDetectorProvider",
+  "inputs": {
+   "model_name": "bbox/face_yolov8m.pt"
+  },
+  "_meta": {
+   "title": "얼굴 찾기"
+  }
+ },
+ "23": {
+  "class_type": "FaceDetailer",
+  "_meta": {
+   "title": "얼굴 자동 다듬기"
+  },
+  "inputs": {
+   "image": [
+    "7",
+    0
+   ],
+   "model": [
+    "2",
+    0
+   ],
+   "clip": [
+    "2",
+    1
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "bbox_detector": [
+    "22",
+    0
+   ],
+   "guide_size": 512,
+   "guide_size_for": true,
+   "max_size": 768,
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.4,
+   "feather": 5,
+   "noise_mask": true,
+   "force_inpaint": true,
+   "bbox_threshold": 0.5,
+   "bbox_dilation": 10,
+   "bbox_crop_factor": 3.0,
+   "sam_detection_hint": "center-1",
+   "sam_dilation": 0,
+   "sam_threshold": 0.93,
+   "sam_bbox_expansion": 0,
+   "sam_mask_hint_threshold": 0.7,
+   "sam_mask_hint_use_negative": "False",
+   "drop_size": 10,
+   "wildcard": "",
+   "cycle": 1,
+   "inpaint_model": false,
+   "noise_mask_feather": 20,
+   "tiled_encode": false,
+   "tiled_decode": false
+  }
+ },
+ "24": {
+  "class_type": "UltralyticsDetectorProvider",
+  "inputs": {
+   "model_name": "bbox/hand_yolov8s.pt"
+  },
+  "_meta": {
+   "title": "손 찾기"
+  }
+ },
+ "25": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "detailed hands, five fingers",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "손 다듬기 프롬프트"
+  }
+ },
+ "26": {
+  "class_type": "FaceDetailer",
+  "_meta": {
+   "title": "손 자동 다듬기"
+  },
+  "inputs": {
+   "image": [
+    "23",
+    0
+   ],
+   "model": [
+    "2",
+    0
+   ],
+   "clip": [
+    "2",
+    1
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "positive": [
+    "25",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "bbox_detector": [
+    "24",
+    0
+   ],
+   "guide_size": 512,
+   "guide_size_for": true,
+   "max_size": 768,
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.45,
+   "feather": 5,
+   "noise_mask": true,
+   "force_inpaint": true,
+   "bbox_threshold": 0.5,
+   "bbox_dilation": 10,
+   "bbox_crop_factor": 2.0,
+   "sam_detection_hint": "center-1",
+   "sam_dilation": 0,
+   "sam_threshold": 0.93,
+   "sam_bbox_expansion": 0,
+   "sam_mask_hint_threshold": 0.7,
+   "sam_mask_hint_use_negative": "False",
+   "drop_size": 10,
+   "wildcard": "",
+   "cycle": 1,
+   "inpaint_model": false,
+   "noise_mask_feather": 20,
+   "tiled_encode": false,
+   "tiled_decode": false
+  }
+ }
+}

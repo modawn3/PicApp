@@ -1,0 +1,184 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "dreamshaper_8.safetensors"
+  },
+  "_meta": {
+   "title": "CheckpointLoaderSimple"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "(a huge steampunk zeppelin with brass propellers:1.15) flying in the sky on the left side, on the right side a (medieval stone castle:1.2) on a cliff, concept art, digital painting, matte painting, epic scale, dramatic lighting, atmospheric perspective, highly detailed",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 프롬프트 (그릴 것)"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "sails, mast, (worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정 프롬프트 (피할 것)"
+  }
+ },
+ "5": {
+  "class_type": "EmptyLatentImage",
+  "inputs": {
+   "width": 768,
+   "height": 512,
+   "batch_size": 1
+  },
+  "_meta": {
+   "title": "EmptyLatentImage"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "seed": 0,
+   "steps": 25,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "5",
+    0
+   ],
+   "denoise": 1
+  },
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "7": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "VAEDecode"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "7",
+    0
+   ],
+   "filename_prefix": "02_concept_draft"
+  },
+  "_meta": {
+   "title": "저장: 초안 768"
+  }
+ },
+ "9": {
+  "class_type": "LatentUpscaleBy",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "upscale_method": "nearest-exact",
+   "scale_by": 1.5
+  },
+  "_meta": {
+   "title": "1.5배 키우기"
+  }
+ },
+ "10": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "seed": 0,
+   "steps": 20,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "9",
+    0
+   ],
+   "denoise": 0.5
+  },
+  "_meta": {
+   "title": "세부 다시 그리기 (denoise 0.5)"
+  }
+ },
+ "11": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "samples": [
+    "10",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8
+  },
+  "_meta": {
+   "title": "VAE Decode (타일, 메모리 절약)"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "02_concept_hires"
+  },
+  "_meta": {
+   "title": "저장: 완성 1152"
+  }
+ }
+}

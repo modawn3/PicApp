@@ -1,0 +1,228 @@
+{
+ "2": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "dreamshaper_8.safetensors"
+  },
+  "_meta": {
+   "title": "CheckpointLoaderSimple"
+  }
+ },
+ "3": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "inpaint_source.png"
+  },
+  "_meta": {
+   "title": "고칠 그림 (오른쪽 클릭 → MaskEditor로 칠하기)"
+  }
+ },
+ "4": {
+  "class_type": "InpaintCropImproved",
+  "inputs": {
+   "image": [
+    "3",
+    0
+   ],
+   "downscale_algorithm": "bilinear",
+   "upscale_algorithm": "bicubic",
+   "preresize": false,
+   "preresize_mode": "ensure minimum resolution",
+   "preresize_min_width": 1024,
+   "preresize_min_height": 1024,
+   "preresize_max_width": 16384,
+   "preresize_max_height": 16384,
+   "mask_fill_holes": true,
+   "mask_expand_pixels": 0,
+   "mask_invert": false,
+   "mask_blend_pixels": 32,
+   "mask_hipass_filter": 0.1,
+   "extend_for_outpainting": false,
+   "extend_up_factor": 1,
+   "extend_down_factor": 1,
+   "extend_left_factor": 1,
+   "extend_right_factor": 1,
+   "context_from_mask_extend_factor": 2.0,
+   "output_resize_to_target_size": true,
+   "output_target_width": 512,
+   "output_target_height": 512,
+   "output_padding": "32",
+   "device_mode": "cpu (compatible)",
+   "mask": [
+    "3",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "잘라서 512로 키우기"
+  }
+ },
+ "5": {
+  "class_type": "PreviewImage",
+  "inputs": {
+   "images": [
+    "4",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "잘린 부분 확인"
+  }
+ },
+ "6": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "cute face, big round eyes, detailed eyes, small nose, soft smile, anime style, clean lineart, (flat colors, cel shading:1.2), highly detailed",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "긍정 프롬프트 (결과 모습)"
+  }
+ },
+ "7": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "asymmetric eyes, cross-eyed, ugly face, extra eyes, (worst quality, low quality:1.4), blurry, deformed, bad anatomy, 3d render, glossy, photo",
+   "clip": [
+    "2",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "부정 프롬프트 (없앨 것)"
+  }
+ },
+ "8": {
+  "class_type": "InpaintModelConditioning",
+  "inputs": {
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ],
+   "pixels": [
+    "4",
+    1
+   ],
+   "mask": [
+    "4",
+    2
+   ],
+   "noise_mask": true
+  },
+  "_meta": {
+   "title": "InpaintModelConditioning"
+  }
+ },
+ "9": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "seed": 0,
+   "steps": 30,
+   "cfg": 7,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "positive": [
+    "8",
+    0
+   ],
+   "negative": [
+    "8",
+    1
+   ],
+   "latent_image": [
+    "8",
+    2
+   ],
+   "denoise": 0.6
+  },
+  "_meta": {
+   "title": "다시 그리기 (denoise 0.6)"
+  }
+ },
+ "10": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "9",
+    0
+   ],
+   "vae": [
+    "2",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "VAEDecode"
+  }
+ },
+ "11": {
+  "class_type": "InpaintStitchImproved",
+  "inputs": {
+   "stitcher": [
+    "4",
+    0
+   ],
+   "inpainted_image": [
+    "10",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "원래 자리에 붙이기"
+  }
+ },
+ "12": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "11",
+    0
+   ],
+   "filename_prefix": "04_fix_face"
+  },
+  "_meta": {
+   "title": "저장: 수정본"
+  }
+ },
+ "13": {
+  "class_type": "InspyrenetRembg",
+  "inputs": {
+   "image": [
+    "11",
+    0
+   ],
+   "torchscript_jit": "default"
+  },
+  "_meta": {
+   "title": "배경 제거"
+  }
+ },
+ "14": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "13",
+    0
+   ],
+   "filename_prefix": "04_fix_face_transparent"
+  },
+  "_meta": {
+   "title": "저장: 투명"
+  }
+ }
+}

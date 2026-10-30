@@ -1,0 +1,102 @@
+{
+  "name": "소품 바꾸기",
+  "group": "고치기",
+  "order": 6,
+  "description": "모자 같은 소품을 바꾸거나 없애요.",
+  "fields": [
+    {
+      "id": "image",
+      "type": "mask_image",
+      "label": "고칠 그림",
+      "targets": [
+        {
+          "node": "3",
+          "input": "image"
+        }
+      ],
+      "hint": "바꿀 소품 전체와 없앨 것을 칠하세요. 칠한 크기가 새 소품 크기가 돼요."
+    },
+    {
+      "id": "positive",
+      "type": "textarea",
+      "label": "고친 뒤 모습",
+      "default": "small brown leather top hat with brass buckle and band, steampunk, matte, anime style, clean lineart, (flat colors, cel shading:1.2), highly detailed",
+      "hint": "명령문이 아니라 결과 모습으로 써요. 예: '모자 없애기' 대신 '맨머리', 없앨 것은 아래 칸에.",
+      "targets": [
+        {
+          "node": "6",
+          "input": "text"
+        }
+      ]
+    },
+    {
+      "id": "negative",
+      "type": "textarea",
+      "label": "없앨 것",
+      "default": "goggles, glasses, lenses, black hat, shiny, (worst quality, low quality:1.4), blurry, deformed, bad anatomy, 3d render, glossy, photo",
+      "hint": "나오면 안 되는 것. 없애고 싶은 것도 여기에 써요.",
+      "targets": [
+        {
+          "node": "7",
+          "input": "text"
+        }
+      ]
+    },
+    {
+      "id": "denoise",
+      "type": "number",
+      "label": "바꾸는 정도",
+      "default": 0.9,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.05,
+      "hint": "새 소품의 색·재질은 옷과 맞춰 쓰고, 없앨 것은 '없앨 것' 맨 앞에 써요.",
+      "targets": [
+        {
+          "node": "9",
+          "input": "denoise"
+        }
+      ]
+    },
+    {
+      "id": "loras",
+      "type": "loras",
+      "label": "LoRA (캐릭터·그림체)",
+      "prompt_targets": [
+        {
+          "node": "6",
+          "input": "text"
+        }
+      ],
+      "hint": "ComfyUI\\models\\loras 폴더의 LoRA 를 골라요. 여러 개를 같이 써도 돼요. 세기는 0.6~1.0 이 무난해요."
+    },
+    {
+      "id": "seed",
+      "type": "seed",
+      "label": "시드",
+      "hint": "같은 캐릭터를 다시 얻으려면 '매번 새로'를 끄고 숫자를 그대로 두세요.",
+      "targets": [
+        {
+          "node": "9",
+          "input": "seed"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "node": "12",
+      "label": "수정본"
+    },
+    {
+      "node": "14",
+      "label": "투명"
+    },
+    {
+      "node": "5",
+      "label": "잘린 부분 확인",
+      "send": false
+    }
+  ],
+  "workflow": "workflow_api.json"
+}

@@ -1,0 +1,66 @@
+# 번역 사전: 한글 = 영어
+# 번역 모델보다 먼저 이 사전으로 바꿔요. 자주 틀리게 번역되는 말을 여기에 더하세요.
+# 한 줄에 하나씩, # 뒤는 메모예요.
+
+전신 = full body
+상반신 = upper body
+얼굴 클로즈업 = face close-up
+흰 배경 = white background
+흰색 배경 = white background
+단순한 배경 = simple background
+투명 배경 = simple background, white background
+애니메이션 스타일 = anime style
+애니 스타일 = anime style
+깔끔한 선화 = clean lineart
+선화 = lineart
+평면 색 = flat colors
+셀 셰이딩 = cel shading
+수채화 = watercolor
+유화 = oil painting
+디지털 페인팅 = digital painting
+컨셉 아트 = concept art
+컨셉아트 = concept art
+게임 캐릭터 = game character art
+게임 에셋 = game asset
+도트 = pixel art
+픽셀 아트 = pixel art
+고품질 = high quality
+저품질 = low quality
+최고 품질 = best quality
+최저 품질 = worst quality
+흐릿함 = blurry
+흐림 = blurry
+워터마크 = watermark
+서명 = signature
+글자 = text
+손가락 = fingers
+손가락 추가 = extra fingers
+스팀펑크 = steampunk
+중세 = medieval
+마법사 = wizard
+기사 = knight
+고글 = goggles
+기계 팔 = mechanical arm
+비행선 = airship
+황동 = brass
+가죽 = leather
+톱해트 = top hat
+극적인 조명 = dramatic lighting
+
+# 몸 비율
+2등신 = chibi, big head, tiny body
+3등신 = (chibi:0.8), big head, short body, short legs
+SD 등신 = chibi, big head, tiny body
+8등신 = tall, long legs, realistic proportions
+
+# 얼굴
+둥근 얼굴 = round face
+둥그란 얼굴 = round face
+동그란 얼굴 = round face
+볼 홍조 = blush
+볼에 홍조 = blush
+볼에 타원형 홍조 = oval blush on cheeks
+홍조 = blush
+큰 눈 = big eyes
+웃는 얼굴 = smiling
+미소 = smile

@@ -1,0 +1,152 @@
+{
+  "name": "도트 만들기",
+  "group": "바꾸기",
+  "order": 9,
+  "run_label": "만들기",
+  "description": "그림을 게임용 도트(픽셀아트)로 바꿔요. 줄이고, 색을 줄이고, 배경을 투명하게 해요.",
+  "fields": [
+    {
+      "id": "image",
+      "type": "image",
+      "label": "도트로 만들 그림",
+      "targets": [
+        {
+          "node": "13",
+          "input": "image"
+        }
+      ],
+      "hint": "결과 카드의 '다른 기능으로 보내기'로도 넣을 수 있어요. 투명 그림을 보내면 그대로 써요."
+    },
+    {
+      "id": "bg",
+      "type": "choice",
+      "label": "배경",
+      "default": "remove",
+      "auto_alpha_from": "image",
+      "hint": "투명한 그림을 올리면 저절로 '투명 그대로'로 바뀌어요.",
+      "options": [
+        {
+          "value": "remove",
+          "label": "배경 지우기",
+          "alpha": false,
+          "set": [
+            {
+              "node": "8",
+              "input": "images",
+              "value": [
+                "11",
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "value": "keep",
+          "label": "투명 그대로 (이미 배경이 없는 그림)",
+          "alpha": true,
+          "set": [
+            {
+              "node": "8",
+              "input": "images",
+              "value": [
+                "40",
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "size",
+      "type": "choice",
+      "label": "도트 크기 (가장 긴 쪽)",
+      "default": "64",
+      "options": [
+        {
+          "value": "16",
+          "label": "16 픽셀"
+        },
+        {
+          "value": "24",
+          "label": "24 픽셀"
+        },
+        {
+          "value": "32",
+          "label": "32 픽셀"
+        },
+        {
+          "value": "48",
+          "label": "48 픽셀"
+        },
+        {
+          "value": "64",
+          "label": "64 픽셀"
+        },
+        {
+          "value": "96",
+          "label": "96 픽셀"
+        },
+        {
+          "value": "128",
+          "label": "128 픽셀"
+        }
+      ],
+      "hint": "작을수록 옛날 게임 느낌이에요. 32~64가 캐릭터에 무난해요."
+    },
+    {
+      "id": "square",
+      "type": "toggle",
+      "label": "정사각 칸에 맞추기 (아래 가운데 정렬)",
+      "default": true,
+      "hint": "모든 결과가 같은 칸 크기가 되어 스프라이트 시트로 묶기 좋아요."
+    },
+    {
+      "id": "colors",
+      "type": "number",
+      "label": "색 수 (팔레트를 안 쓸 때)",
+      "default": 16,
+      "min": 4,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "id": "palette",
+      "type": "palette",
+      "label": "색 팔레트",
+      "simple": true,
+      "hint": "고르면 도트가 이 팔레트 색만 써요. 안 고르면 그림에서 위 색 수만큼 골라요."
+    },
+    {
+      "id": "outline",
+      "type": "toggle",
+      "label": "1픽셀 외곽선 넣기",
+      "default": false,
+      "hint": "가장 어두운 색으로 둘레에 선을 둘러요. 배경 위에서 캐릭터가 잘 보여요."
+    }
+  ],
+  "outputs": [
+    {
+      "node": "8",
+      "label": "배경 지운 원본",
+      "hidden": true
+    }
+  ],
+  "postprocess": [
+    {
+      "step": "pixel",
+      "from_node": [
+        "8"
+      ],
+      "label": "도트",
+      "fields": [
+        "size",
+        "square",
+        "colors",
+        "palette",
+        "outline"
+      ]
+    }
+  ],
+  "workflow": "workflow_api.json"
+}

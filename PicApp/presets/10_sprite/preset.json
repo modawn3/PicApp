@@ -1,0 +1,505 @@
+{
+  "name": "스프라이트 애니메이션",
+  "group": "움직이기",
+  "order": 11,
+  "run_label": "만들기",
+  "repeat_over": "poses",
+  "description": "자세 그림을 순서대로 올리면 같은 캐릭터를 자세마다 그려서 스프라이트 시트와 움직임 미리보기(GIF)를 만들어요. 이미 그린 그림을 묶기만 할 수도 있어요.",
+  "fields": [
+    {
+      "id": "how",
+      "type": "choice",
+      "label": "만드는 방법",
+      "default": "draw",
+      "options": [
+        {
+          "value": "draw",
+          "label": "자세 그림대로 새로 그리기"
+        },
+        {
+          "value": "bundle_rembg",
+          "label": "이미 그린 그림 묶기 (배경 지우기)",
+          "set": [
+            {
+              "node": "11",
+              "input": "image",
+              "value": [
+                "13",
+                0
+              ]
+            }
+          ],
+          "remove": [
+            "15"
+          ]
+        },
+        {
+          "value": "bundle",
+          "label": "이미 그린 그림 묶기 (투명 그대로)",
+          "set": [
+            {
+              "node": "12",
+              "input": "images",
+              "value": [
+                "40",
+                0
+              ]
+            }
+          ],
+          "remove": [
+            "15"
+          ]
+        }
+      ],
+      "hint": "묶기만 하면 아래 '그릴 것'과 자세 칸은 쓰지 않아요."
+    },
+    {
+      "id": "poses",
+      "type": "images",
+      "label": "프레임 그림 (순서대로)",
+      "targets": [
+        {
+          "node": "13",
+          "input": "image"
+        }
+      ],
+      "hint": "새로 그리기: 자세 참고 그림(사진도 돼요)을 동작 순서대로 올려요. 걷기는 4~8장이 무난해요. 묶기: 프레임 그림을 순서대로."
+    },
+    {
+      "id": "skeleton",
+      "type": "toggle",
+      "label": "올린 그림이 이미 뼈대 그림이에요 (OpenPose 막대 그림)",
+      "default": false,
+      "skeleton_for": "poses",
+      "hint": "'3D 자세 만들기'에서 보낸 뼈대 그림이면 저절로 켜져요. 뼈대를 다시 뽑지 않아 더 정확해요.",
+      "bypass_on": [
+        {
+          "node": "14",
+          "input": "image"
+        }
+      ]
+    },
+    {
+      "id": "ref",
+      "type": "image",
+      "label": "캐릭터 참고 그림 (이 캐릭터처럼)",
+      "required": false,
+      "flatten": true,
+      "targets": [
+        {
+          "node": "52",
+          "input": "image"
+        }
+      ],
+      "requires": [
+        "IPAdapterUnifiedLoader",
+        "IPAdapterAdvanced"
+      ],
+      "setup": "캐릭터 닮게 그리기 준비",
+      "bypass_empty": [
+        {
+          "node": "53",
+          "input": "model"
+        }
+      ],
+      "hint": "이미 그린 캐릭터 그림을 올리면 얼굴·옷·색을 보고 새 자세로 그려요. 결과 카드의 '다른 기능으로 보내기'로도 넣을 수 있어요. 비워 두면 설명만 보고 그려요."
+    },
+    {
+      "id": "ref_weight",
+      "type": "number",
+      "label": "캐릭터 닮게 하는 세기",
+      "default": 0.7,
+      "min": 0.2,
+      "max": 1.2,
+      "step": 0.05,
+      "targets": [
+        {
+          "node": "53",
+          "input": "weight"
+        }
+      ],
+      "hint": "덜 닮으면 올리고, 참고 그림의 자세나 배경까지 따라오면 내려요. 0.6~0.8 이 무난해요."
+    },
+    {
+      "id": "subject",
+      "type": "textarea",
+      "label": "그릴 것 (주제)",
+      "default": "a young steampunk inventor girl with brass goggles and a mechanical arm",
+      "hint": "모든 프레임에 같은 설명과 같은 시드를 써요. 옷·색을 자세히 쓸수록 프레임끼리 덜 달라져요."
+    },
+    {
+      "id": "style",
+      "type": "textarea",
+      "label": "그림체 단어",
+      "advanced": true,
+      "default": "full body, simple background, white background, flat illustration, anime style, clean lineart, flat colors, vibrant colors, cel shading, game character art, highly detailed",
+      "targets": [
+        {
+          "node": "3",
+          "input": "text",
+          "template": "{subject}, {style}"
+        },
+        {
+          "node": "25",
+          "input": "text",
+          "template": "{subject}, detailed hands, five fingers, {style}"
+        }
+      ]
+    },
+    {
+      "id": "negative",
+      "type": "textarea",
+      "label": "피할 것 (부정 프롬프트)",
+      "advanced": true,
+      "default": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+      "hint": "나오면 안 되는 것. 없애고 싶은 것도 여기에 써요.",
+      "targets": [
+        {
+          "node": "4",
+          "input": "text"
+        }
+      ]
+    },
+    {
+      "id": "solo",
+      "type": "toggle",
+      "label": "캐릭터만 그리기 (주변 기계·바퀴·방패 같은 물건 빼기)",
+      "default": true,
+      "hint": "켜 두면 '피할 것'에 직접 쓰지 않아도 큰 기계·탈것·방패·배경 물건·여분의 팔다리를 피하게 해요. 일부러 탈것이나 큰 무기를 그릴 때만 끄세요.",
+      "add_text": [
+        {
+          "node": "3",
+          "input": "text",
+          "text": "(solo:1.2), standing alone, (plain white background:1.2), empty background"
+        },
+        {
+          "node": "4",
+          "input": "text",
+          "text": "(machine, machinery, engine, vehicle, motorcycle, wheel, tire:1.3), (giant gears, large cogwheel, clockwork machine:1.2), (shield, weapon, holding large object:1.2), robot, mecha, pipes, scenery, background objects, furniture, multiple views, character sheet, reference sheet, multiple girls, (extra legs, extra arms, third leg:1.3)"
+        }
+      ]
+    },
+    {
+      "id": "ratio",
+      "type": "choice",
+      "label": "비율",
+      "default": "tall",
+      "auto_from": "poses",
+      "hint": "첫 프레임 그림을 올리면 가장 가까운 비율로 저절로 바뀌어요.",
+      "options": [
+        {
+          "value": "tall",
+          "label": "세로 512x768",
+          "ratio": 0.6666666666666666,
+          "set": [
+            {
+              "node": "5",
+              "input": "width",
+              "value": 512
+            },
+            {
+              "node": "5",
+              "input": "height",
+              "value": 768
+            }
+          ]
+        },
+        {
+          "value": "square",
+          "label": "정사각 512x512",
+          "ratio": 1.0,
+          "set": [
+            {
+              "node": "5",
+              "input": "width",
+              "value": 512
+            },
+            {
+              "node": "5",
+              "input": "height",
+              "value": 512
+            }
+          ]
+        },
+        {
+          "value": "34",
+          "label": "3:4 512x704",
+          "ratio": 0.7272727272727273,
+          "set": [
+            {
+              "node": "5",
+              "input": "width",
+              "value": 512
+            },
+            {
+              "node": "5",
+              "input": "height",
+              "value": 704
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strength",
+      "type": "number",
+      "label": "자세 따라가기 세기",
+      "advanced": true,
+      "default": 1.0,
+      "min": 0.3,
+      "max": 1.5,
+      "step": 0.05,
+      "targets": [
+        {
+          "node": "17",
+          "input": "strength"
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "type": "number",
+      "label": "자세 적용 끝나는 지점",
+      "advanced": true,
+      "default": 0.8,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.05,
+      "targets": [
+        {
+          "node": "17",
+          "input": "end_percent"
+        }
+      ]
+    },
+    {
+      "id": "loras",
+      "type": "loras",
+      "label": "LoRA (캐릭터·그림체)",
+      "prompt_targets": [
+        {
+          "node": "3",
+          "input": "text"
+        }
+      ],
+      "hint": "ComfyUI\\models\\loras 폴더의 LoRA 를 골라요. 여러 개를 같이 써도 돼요. 세기는 0.6~1.0 이 무난해요."
+    },
+    {
+      "id": "hires",
+      "type": "toggle",
+      "label": "2단계로 그리기 (1.5배로 키워 다시 다듬기)",
+      "default": false,
+      "group_label": "품질",
+      "hint": "선과 장식이 또렷해져요. 결과가 1.5배 커지고 시간이 더 걸려요.",
+      "bypass_off": [
+        {
+          "node": "21",
+          "input": "latent_image"
+        },
+        {
+          "node": "20",
+          "input": "samples"
+        }
+      ]
+    },
+    {
+      "id": "face",
+      "type": "toggle",
+      "label": "얼굴 자동 다듬기",
+      "default": false,
+      "requires": [
+        "FaceDetailer",
+        "UltralyticsDetectorProvider"
+      ],
+      "bypass_off": [
+        {
+          "node": "23",
+          "input": "image"
+        }
+      ]
+    },
+    {
+      "id": "hands",
+      "type": "toggle",
+      "label": "손 자동 다듬기",
+      "default": false,
+      "requires": [
+        "FaceDetailer",
+        "UltralyticsDetectorProvider"
+      ],
+      "hint": "얼굴과 손을 찾아 확대해서 다시 그려요. 못 찾으면 그대로 둬요.",
+      "bypass_off": [
+        {
+          "node": "26",
+          "input": "image"
+        }
+      ],
+      "targets": []
+    },
+    {
+      "id": "seed",
+      "type": "seed",
+      "label": "시드",
+      "hint": "같은 캐릭터를 다시 얻으려면 '매번 새로'를 끄고 숫자를 그대로 두세요.",
+      "targets": [
+        {
+          "node": "6",
+          "input": "seed"
+        },
+        {
+          "node": "21",
+          "input": "seed"
+        },
+        {
+          "node": "23",
+          "input": "seed"
+        },
+        {
+          "node": "26",
+          "input": "seed"
+        }
+      ]
+    },
+    {
+      "id": "pixel",
+      "type": "toggle",
+      "label": "도트로 바꾸기",
+      "default": true,
+      "group_label": "시트",
+      "hint": "모든 프레임을 같은 크기·같은 색으로 도트로 바꿔요."
+    },
+    {
+      "id": "size",
+      "type": "choice",
+      "label": "도트 크기 (칸 한 변)",
+      "default": "64",
+      "options": [
+        {
+          "value": "16",
+          "label": "16 픽셀"
+        },
+        {
+          "value": "24",
+          "label": "24 픽셀"
+        },
+        {
+          "value": "32",
+          "label": "32 픽셀"
+        },
+        {
+          "value": "48",
+          "label": "48 픽셀"
+        },
+        {
+          "value": "64",
+          "label": "64 픽셀"
+        },
+        {
+          "value": "96",
+          "label": "96 픽셀"
+        },
+        {
+          "value": "128",
+          "label": "128 픽셀"
+        }
+      ]
+    },
+    {
+      "id": "colors",
+      "type": "number",
+      "label": "색 수 (팔레트를 안 쓸 때)",
+      "default": 16,
+      "min": 4,
+      "max": 64,
+      "step": 1,
+      "advanced": true
+    },
+    {
+      "id": "palette",
+      "type": "palette",
+      "label": "색 팔레트 (도트)",
+      "simple": true,
+      "advanced": true,
+      "hint": "고르면 도트가 이 팔레트 색만 써요."
+    },
+    {
+      "id": "outline",
+      "type": "toggle",
+      "label": "1픽셀 외곽선 넣기 (도트)",
+      "default": false,
+      "advanced": true
+    },
+    {
+      "id": "cell",
+      "type": "choice",
+      "label": "칸 크기 (도트로 안 바꿀 때)",
+      "default": "256",
+      "advanced": true,
+      "options": [
+        {
+          "value": "128",
+          "label": "128 픽셀"
+        },
+        {
+          "value": "256",
+          "label": "256 픽셀"
+        },
+        {
+          "value": "0",
+          "label": "줄이지 않기"
+        }
+      ]
+    },
+    {
+      "id": "columns",
+      "type": "number",
+      "label": "한 줄에 몇 칸 (0 = 모두 한 줄)",
+      "default": 0,
+      "min": 0,
+      "max": 12,
+      "step": 1,
+      "hint": "Unity 에서는 Sprite Mode 를 Multiple 로 하고 Slice 의 Grid By Cell Size 에 칸 크기를 넣으면 잘라져요."
+    },
+    {
+      "id": "frame_ms",
+      "type": "number",
+      "label": "미리보기 한 프레임 시간 (ms)",
+      "default": 120,
+      "min": 40,
+      "max": 500,
+      "step": 10,
+      "hint": "작을수록 빨라요. 걷기는 100~150 이 무난해요."
+    }
+  ],
+  "outputs": [
+    {
+      "node": "15",
+      "label": "뼈대 확인",
+      "send": false
+    },
+    {
+      "node": "12",
+      "label": "프레임"
+    }
+  ],
+  "postprocess": [
+    {
+      "step": "sprite",
+      "from_node": [
+        "12"
+      ],
+      "label": "스프라이트",
+      "fields": [
+        "pixel",
+        "size",
+        "colors",
+        "palette",
+        "outline",
+        "cell",
+        "columns",
+        "frame_ms"
+      ]
+    }
+  ],
+  "workflow": "workflow_api.json"
+}

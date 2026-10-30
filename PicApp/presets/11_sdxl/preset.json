@@ -1,0 +1,237 @@
+{
+  "name": "고품질 다듬기 (SDXL)",
+  "group": "바꾸기",
+  "order": 10,
+  "run_label": "다듬기",
+  "description": "마음에 든 그림을 더 큰 SDXL 모델로 한 번 더 다듬어요. 1024 크기로 키우면서 선과 질감이 좋아져요. 느려요 (한 장에 1분 이상 걸릴 수 있어요).",
+  "fields": [
+    {
+      "id": "image",
+      "type": "image",
+      "label": "다듬을 그림",
+      "flatten": true,
+      "targets": [
+        {
+          "node": "13",
+          "input": "image"
+        }
+      ],
+      "hint": "결과 카드의 '다른 기능으로 보내기 → 고품질 다듬기'로 넣으면 편해요. 투명한 곳은 흰색으로 채워요."
+    },
+    {
+      "id": "content",
+      "type": "textarea",
+      "label": "그림 설명",
+      "rows": 2,
+      "default": "a girl, full body",
+      "hint": "그림에 무엇이 있는지 짧게 써요. 처음 그릴 때 쓴 설명을 그대로 넣으면 가장 좋아요. 한글도 돼요."
+    },
+    {
+      "id": "style",
+      "type": "textarea",
+      "label": "그림체 단어",
+      "advanced": true,
+      "default": "anime style, clean lineart, flat colors, cel shading, highly detailed, sharp focus",
+      "targets": [
+        {
+          "node": "3",
+          "input": "text",
+          "template": "{content}, {style}"
+        }
+      ]
+    },
+    {
+      "id": "negative",
+      "type": "textarea",
+      "label": "피할 것 (부정 프롬프트)",
+      "advanced": true,
+      "default": "(worst quality, low quality:1.4), blurry, jpeg artifacts, watermark, signature, text, logo, deformed, bad anatomy, extra fingers, extra limbs, cropped, border, frame, black border, vignette, photo, 3d render",
+      "hint": "나오면 안 되는 것. 없애고 싶은 것도 여기에 써요.",
+      "targets": [
+        {
+          "node": "4",
+          "input": "text"
+        }
+      ]
+    },
+    {
+      "id": "amount",
+      "type": "number",
+      "label": "얼마나 다듬을지 (조금 ~ 많이)",
+      "default": 0.35,
+      "min": 0.15,
+      "max": 0.7,
+      "step": 0.05,
+      "targets": [
+        {
+          "node": "6",
+          "input": "denoise"
+        }
+      ],
+      "hint": "0.25 는 거의 그대로 또렷하게만, 0.35 는 질감과 세부를 다시, 0.5 이상이면 얼굴·옷 모양도 바뀌기 시작해요."
+    },
+    {
+      "id": "size",
+      "type": "choice",
+      "label": "크기",
+      "default": "1mp",
+      "options": [
+        {
+          "value": "1mp",
+          "label": "1024급 (고품질, 느림)",
+          "set": [
+            {
+              "node": "30",
+              "input": "megapixels",
+              "value": 1.0
+            }
+          ]
+        },
+        {
+          "value": "06mp",
+          "label": "800급 (조금 빠름)",
+          "set": [
+            {
+              "node": "30",
+              "input": "megapixels",
+              "value": 0.6
+            }
+          ]
+        }
+      ],
+      "hint": "그림 비율은 그대로 두고 전체 픽셀 수만 맞춰요."
+    },
+    {
+      "id": "model",
+      "type": "choice",
+      "label": "SDXL 모델",
+      "default": "turbo",
+      "advanced": true,
+      "options": [
+        {
+          "value": "turbo",
+          "label": "DreamShaper XL Turbo (빠름, 8단계)",
+          "set": [
+            {
+              "node": "2",
+              "input": "ckpt_name",
+              "value": "DreamShaperXL_Turbo_v2_1.safetensors"
+            },
+            {
+              "node": "6",
+              "input": "steps",
+              "value": 8
+            },
+            {
+              "node": "6",
+              "input": "cfg",
+              "value": 2.0
+            },
+            {
+              "node": "6",
+              "input": "sampler_name",
+              "value": "dpmpp_sde"
+            },
+            {
+              "node": "6",
+              "input": "scheduler",
+              "value": "karras"
+            }
+          ]
+        },
+        {
+          "value": "base",
+          "label": "SDXL 기본 1.0 (느림, 25단계)",
+          "set": [
+            {
+              "node": "2",
+              "input": "ckpt_name",
+              "value": "sd_xl_base_1.0.safetensors"
+            },
+            {
+              "node": "6",
+              "input": "steps",
+              "value": 25
+            },
+            {
+              "node": "6",
+              "input": "cfg",
+              "value": 6.0
+            },
+            {
+              "node": "6",
+              "input": "sampler_name",
+              "value": "dpmpp_2m"
+            },
+            {
+              "node": "6",
+              "input": "scheduler",
+              "value": "karras"
+            }
+          ]
+        }
+      ],
+      "hint": "설치 안내의 'SDXL 모델 준비'에서 받은 모델을 골라요. 보통은 Turbo 만 있으면 돼요."
+    },
+    {
+      "id": "rembg",
+      "type": "toggle",
+      "label": "배경 제거한 그림도 만들기",
+      "default": false,
+      "bypass_off": [
+        {
+          "node": "12",
+          "input": "images"
+        }
+      ]
+    },
+    {
+      "id": "palette",
+      "type": "palette",
+      "label": "색 팔레트",
+      "hint": "그릴 때는 색 이름을 프롬프트에 붙여 분위기를 맞추고, 그린 뒤에는 모든 색을 팔레트 색으로 바꿔요. 선 색(검정 계열)과 흰색도 꼭 넣으세요.",
+      "targets": [
+        {
+          "node": "3",
+          "input": "text",
+          "append": true
+        }
+      ]
+    },
+    {
+      "id": "seed",
+      "type": "seed",
+      "label": "시드",
+      "hint": "같은 캐릭터를 다시 얻으려면 '매번 새로'를 끄고 숫자를 그대로 두세요.",
+      "targets": [
+        {
+          "node": "6",
+          "input": "seed"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "node": "8",
+      "label": "고품질"
+    },
+    {
+      "node": "12",
+      "label": "투명"
+    }
+  ],
+  "postprocess": [
+    {
+      "step": "palette",
+      "from_node": [
+        "8",
+        "12"
+      ],
+      "label": "팔레트 맞춤",
+      "params_from": "palette",
+      "enabled_key": "snap"
+    }
+  ],
+  "workflow": "workflow_api.json"
+}
