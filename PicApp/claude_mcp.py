@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import sys
+import threading
 import traceback
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,9 +30,15 @@ def log(*args):
 # ---------- 기능 모듈 (바뀌면 다시 읽기) ----------
 
 _tools = {"mod": None, "mtime": None}
+_tools_lock = threading.Lock()
 
 
 def tools():
+    with _tools_lock:
+        return _load_tools()
+
+
+def _load_tools():
     path = os.path.join(APP_DIR, "claude_tools.py")
     mtime = os.path.getmtime(path)
     if _tools["mod"] is None:
@@ -49,11 +56,14 @@ def tools():
 # ---------- MCP (표준 입출력, 한 줄에 JSON 하나) ----------
 
 _out = sys.stdout.buffer
+_out_lock = threading.Lock()  # 도구마다 따로 돌아서 한 줄씩 차례로 쓴다
 
 
 def send(msg):
-    _out.write(json.dumps(msg, ensure_ascii=False).encode("utf-8") + b"\n")
-    _out.flush()
+    data = json.dumps(msg, ensure_ascii=False).encode("utf-8") + b"\n"
+    with _out_lock:
+        _out.write(data)
+        _out.flush()
 
 
 def reply(mid, result=None, error=None):
@@ -114,7 +124,10 @@ def serve():
             reply(None, error={"code": -32700, "message": "JSON 이 아니에요"})
             continue
         for m in (msg if isinstance(msg, list) else [msg]):
-            if isinstance(m, dict) and "method" in m:
+            if isinstance(m, dict) and m.get("method") == "tools/call":
+                # 오래 걸리는 도구가 다른 요청(목록, 상태 확인)을 막지 않게 따로 돌린다
+                threading.Thread(target=handle, args=(m,), daemon=True).start()
+            elif isinstance(m, dict) and "method" in m:
                 handle(m)
 
 
