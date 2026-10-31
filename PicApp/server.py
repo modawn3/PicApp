@@ -23,6 +23,8 @@ import uuid
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# ComfyUI 포터블의 파이썬(python_embeded)은 이 파일이 있는 폴더를 모듈 찾는 곳에 넣지 않는다
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import remote   # 다른 기기에서 접속 (remote.py)
 import updater  # 자동 업데이트 (updater.py)
 
