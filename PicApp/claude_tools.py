@@ -10,7 +10,9 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -19,14 +21,18 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 PRESET_DIR = os.path.join(APP_DIR, "presets")
 RESULT_DIR = os.path.join(APP_DIR, "results")
 IMAGE_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp")
-WAIT_DEFAULT = 50  # 한 번에 기다리는 초. 넘으면 picapp_job 으로 이어서 기다린다
+# Claude 앱은 도구가 60초 안에 대답하지 않으면 실패로 본다. 그래서 한 번에 이만큼만 기다리고,
+# 그 뒤에는 작업 번호를 돌려줘서 picapp_job 으로 이어서 기다리게 한다. 그리는 일은 뒤에서 계속된다.
+WAIT_DEFAULT = 35
+WAIT_MAX = 45
 
 INSTRUCTIONS = """그림 도구(PicApp)는 이 컴퓨터의 ComfyUI(Stable Diffusion 1.5 위주)를 버튼식으로 쓰는 프로그램이에요.
 - 처음에 picapp_features 로 기능(탭)과 칸을 확인하세요. 기능은 업데이트로 늘어날 수 있어요.
 - 그리기는 picapp_run. 안 넣은 칸은 그림 도구의 기본값을 써요. 그림 칸에는 이 컴퓨터의 파일 경로를 넣어요.
-- 프롬프트는 영어로, 명령문이 아니라 결과 모습을 쓰고, 없앨 것은 부정 칸에 써요. 한글은 저절로 번역돼요.
+- 프롬프트는 꼭 영어로 쓰세요 (한글은 번역 모델을 불러오느라 처음에 몇 분 걸릴 수 있어요). 명령문이 아니라 결과 모습을 쓰고, 없앨 것은 부정 칸에 써요.
 - 결과로 나온 파일 경로를 다음 기능의 그림 칸에 그대로 넣으면 이어서 고칠 수 있어요.
-- 오래 걸리면 picapp_run 이 job_id 를 돌려줘요. picapp_job 으로 이어서 기다려요.
+- picapp_run 은 35초쯤 기다리다 안 끝나면 job_id 를 돌려줘요 (처음 켤 때, 품질 단계를 켰을 때 흔해요). 실패가 아니니
+  끝날 때까지 picapp_job 을 되풀이해 부르세요. 같은 그림을 다시 주문하지 마세요.
 - 사용자가 "방금 그린 그림"이라고 하면 picapp_recent 로 찾으세요."""
 
 
@@ -96,7 +102,7 @@ def start_server():
                          stdout=logf, stderr=logf, start_new_session=True)
 
 
-def ensure_ready(progress, need_comfy=True, wait=150):
+def ensure_ready(progress, need_comfy=True, wait=240):
     """그림 도구가 꺼져 있으면 켜고, ComfyUI 가 준비될 때까지 기다린다."""
     st = server_up()
     started = False
@@ -515,29 +521,62 @@ def result_content(res, show, max_size, notes, preset):
 
 # ---------- 일 맡기고 기다리기 ----------
 
-JOBS = {}  # job_id -> {"preset": preset, "notes": [...], "show": n, "max_size": n}
+# 작업 번호 -> {"preset", "notes", "show", "max_size", "state", "prompt_id", "error", "result"}
+# 모듈을 다시 읽어도 하던 일을 잃지 않게 예전 것을 이어 쓴다
+JOBS = globals().get("JOBS") or {}
+
+
+def _submit(job, values):
+    """뒤에서: 그림 도구·ComfyUI 를 켜고 주문을 넣는다 (켜기, 번역 모델 불러오기는 몇 분 걸릴 수 있다)."""
+    try:
+        job["state"] = "starting"
+        ensure_ready(lambda msg: job.update(msg=msg))
+        job["state"] = "sending"
+        job["msg"] = "주문 넣는 중 (한글이 있으면 번역 중)"
+        r = api("/api/run", {"preset": job["preset"]["id"], "values": values}, timeout=900)
+        job["prompt_id"] = r["prompt_id"]
+        job["state"] = "running"
+    except Exception as e:
+        job["error"] = str(e)
+        job["state"] = "error"
+
+
+def _job_text(job_id, msg):
+    return (f"아직 그리는 중이에요 ({msg}). 실패가 아니에요. "
+            f"picapp_job 에 job_id \"{job_id}\" 를 넣어 다시 부르면 이어서 기다려요.")
 
 
 def wait_job(job_id, wait, progress):
     job = JOBS.get(job_id)
+    if job is None:
+        raise ToolError("그 작업 번호를 모르겠어요. Claude 앱을 다시 켰다면 picapp_recent 로 결과 폴더를 확인하세요.")
+    if "result" in job:
+        return job["result"]
     t0 = time.time()
+    wait = min(max(float(wait), 1), WAIT_MAX)
     while True:
-        s = api("/api/job/" + job_id)
-        st = s.get("status")
-        if st == "done":
-            return result_content(s, job["show"], job["max_size"], job["notes"], job["preset"]) if job else \
-                {"content": [{"type": "text", "text": json.dumps(s, ensure_ascii=False)}]}
-        if st == "error":
-            return {"content": [{"type": "text", "text": "그리지 못했어요: " + s.get("message", "")}], "isError": True}
-        if st == "unknown":
-            raise ToolError("그 일을 찾지 못했어요. 그림 도구를 다시 켰다면 처음부터 다시 그려 주세요.")
-        if st == "queued":
-            msg = f"차례를 기다리는 중 (앞에 {s.get('ahead', 0)}개)"
-        else:
-            msg = f"그리는 중 {s.get('elapsed', 0)}초" + (f", 프레임 {s['frame']}/{s['frames']}" if s.get("frames", 1) > 1 else "")
+        if job["state"] == "error":
+            job["result"] = text("그리지 못했어요: " + job["error"], error=True)
+            return job["result"]
+        msg = job.get("msg") or "준비 중"
+        if job["state"] == "running":
+            s = api("/api/job/" + job["prompt_id"])
+            st = s.get("status")
+            if st == "done":
+                job["result"] = result_content(s, job["show"], job["max_size"], job["notes"], job["preset"])
+                return job["result"]
+            if st == "error":
+                job["result"] = text("그리지 못했어요: " + s.get("message", ""), error=True)
+                return job["result"]
+            if st == "unknown":
+                raise ToolError("그림 도구에서 그 일을 찾지 못했어요. 그림 도구를 다시 켰다면 처음부터 다시 그려 주세요.")
+            if st == "queued":
+                msg = f"차례를 기다리는 중 (앞에 {s.get('ahead', 0)}개)"
+            else:
+                msg = f"그리는 중 {s.get('elapsed', 0)}초" + \
+                    (f", 프레임 {s['frame']}/{s['frames']}" if s.get("frames", 1) > 1 else "")
         if time.time() - t0 >= wait:
-            return {"content": [{"type": "text", "text":
-                    f"아직 그리는 중이에요 ({msg}). picapp_job 에 job_id \"{job_id}\" 를 넣어 이어서 기다리세요."}]}
+            return text(_job_text(job_id, msg))
         progress(msg)
         time.sleep(1.5)
 
@@ -547,11 +586,11 @@ def run(args, progress):
     if preset.get("tool"):
         raise ToolError(f"'{preset.get('name')}' 는 그림 도구 화면에서만 쓰는 도구예요.")
     values, notes = prepare_values(preset, args.get("values") or {})
-    ensure_ready(progress)
-    r = api("/api/run", {"preset": preset["id"], "values": values}, timeout=120)
-    JOBS[r["prompt_id"]] = {"preset": preset, "notes": notes, "show": int(args.get("show", 4)),
-                            "max_size": int(args.get("preview_size", 640))}
-    return wait_job(r["prompt_id"], float(args.get("wait_seconds", WAIT_DEFAULT)), progress)
+    job_id = uuid.uuid4().hex[:8]
+    job = JOBS[job_id] = {"preset": preset, "notes": notes, "show": int(args.get("show", 4)),
+                          "max_size": int(args.get("preview_size", 640)), "state": "new"}
+    threading.Thread(target=_submit, args=(job, values), daemon=True).start()
+    return wait_job(job_id, args.get("wait_seconds", WAIT_DEFAULT), progress)
 
 
 def recent(args):
@@ -615,20 +654,22 @@ def tool_list():
          "title": "그림 도구로 그리기",
          "description": "그림 도구의 기능 하나를 실행해 그림을 그리고, 결과 그림(미리보기)과 이 컴퓨터의 파일 경로를 돌려줘요. "
                         "칸 값은 picapp_features 로 확인하세요. 안 넣은 칸은 기본값. 그림 도구나 ComfyUI 가 꺼져 있으면 켜요. "
-                        "wait_seconds 안에 안 끝나면 job_id 를 돌려주니 picapp_job 으로 이어서 기다리세요.",
+                        f"{WAIT_DEFAULT}초쯤 안에 안 끝나면 job_id 를 돌려줘요. 실패가 아니니 끝날 때까지 picapp_job 으로 이어서 기다리세요. "
+                        "프롬프트는 영어로 쓰세요.",
          "inputSchema": {"type": "object", "required": ["feature"], "properties": {
              "feature": {"type": "string", "description": "기능 id 또는 이름. 예: 01_character"},
              "values": {"type": "object", "description": "칸 id → 값. 그림 칸은 파일 경로. "
                         "고치기(mask_image) 칸은 {\"image\": 경로, \"boxes\": [[x0,y0,x1,y1]]} (0~1 비율)"},
-             "wait_seconds": {"type": "number", "description": f"기다릴 최대 초 (기본 {WAIT_DEFAULT})"},
+             "wait_seconds": {"type": "number", "description": f"기다릴 최대 초 (기본 {WAIT_DEFAULT}, 최대 {WAIT_MAX})"},
              "show": {"type": "integer", "description": "미리보기로 보여 줄 그림 수 (기본 4, 0 이면 경로만)"},
              "preview_size": {"type": "integer", "description": "미리보기 가장 긴 쪽 픽셀 (기본 640)"}}}},
         {"name": "picapp_job",
          "title": "그리던 것 이어서 기다리기",
-         "description": "picapp_run 이 job_id 를 돌려줬을 때 이어서 기다리고, 끝나면 결과를 돌려줘요.",
+         "description": "picapp_run 이 job_id 를 돌려줬을 때 이어서 기다리고, 끝나면 결과를 돌려줘요. "
+                        "아직이면 다시 부르세요.",
          "inputSchema": {"type": "object", "required": ["job_id"], "properties": {
              "job_id": {"type": "string"},
-             "wait_seconds": {"type": "number", "description": f"기다릴 최대 초 (기본 {WAIT_DEFAULT})"}}},
+             "wait_seconds": {"type": "number", "description": f"기다릴 최대 초 (기본 {WAIT_DEFAULT}, 최대 {WAIT_MAX})"}}},
          "annotations": {"readOnlyHint": True}},
         {"name": "picapp_stop",
          "title": "그리기 멈추기",
@@ -674,7 +715,7 @@ def call(name, args, progress):
         if name == "picapp_run":
             return run(args, progress)
         if name == "picapp_job":
-            return wait_job(args["job_id"], float(args.get("wait_seconds", WAIT_DEFAULT)), progress)
+            return wait_job(str(args.get("job_id", "")), args.get("wait_seconds", WAIT_DEFAULT), progress)
         if name == "picapp_stop":
             api("/api/interrupt", {"id": args.get("job_id") or ""})
             return text("멈췄어요.")
@@ -683,13 +724,33 @@ def call(name, args, progress):
         if name == "picapp_view":
             return view(args)
         if name == "picapp_status":
-            st = ensure_ready(progress, need_comfy=False)
+            st, started = server_up(), False
+            if st is None:
+                start_server()
+                started = True
+            t0 = time.time()
+            while (st is None or not st.get("comfy")) and time.time() - t0 < WAIT_DEFAULT:
+                progress("그림 도구를 켜는 중" if st is None else "ComfyUI 가 켜지기를 기다리는 중")
+                time.sleep(2)
+                st = server_up()
+            if st is None:
+                return text("그림 도구를 켜는 중이에요. 잠시 뒤 picapp_status 를 다시 불러 확인하세요."
+                            if started else "그림 도구가 응답하지 않아요.")
             if not st.get("comfy"):
-                st = ensure_ready(progress)
+                return text("그림 도구는 켜졌고 ComfyUI 가 켜지는 중이에요 (처음엔 1분쯤). "
+                            "picapp_run 은 그대로 불러도 돼요. 켜지면 저절로 그려요.")
             return text(f"그림 도구 켜짐 (판 {st.get('version')}), ComfyUI 연결됨. 화면: {base_url()}")
         if name == "picapp_open_folder":
-            ensure_ready(progress, need_comfy=False)
-            return text("열었어요: " + api("/api/open-folder", {}).get("path", ""))
+            path = comfy_output_dir() or RESULT_DIR
+            os.makedirs(path, exist_ok=True)
+            try:
+                if os.name == "nt":
+                    os.startfile(path)
+                else:
+                    subprocess.Popen(["xdg-open", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except OSError as e:
+                return text(f"폴더를 열지 못했어요 ({e}). 위치: {path}", error=True)
+            return text("열었어요: " + path)
         return text(f"모르는 도구: {name}", error=True)
     except ToolError as e:
         return text(str(e), error=True)
